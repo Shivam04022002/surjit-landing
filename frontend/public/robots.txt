@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Add "Sitemap: https://<confirmed-domain>/sitemap.xml" once the production
+# domain is confirmed (template: deploy/sitemap.xml.template).

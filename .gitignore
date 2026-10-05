@@ -1,0 +1,44 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+
+# Environment files: secrets live only on the server (shared/.env).
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+
+# Keys, certificates and credentials: never committed.
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+*credentials*.csv
+*accessKeys*.csv
+.aws/
+.ssh/
+
+# Database dumps, backups and local data
+*.archive
+*.archive.gz
+*.bson
+dump/
+backups/
+mongo-data/
+*.mmdb
+*.mmdb.gz
+
+# Logs and OS/editor clutter
+logs/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

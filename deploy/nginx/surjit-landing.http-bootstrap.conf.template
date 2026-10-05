@@ -1,0 +1,33 @@
+# Nginx site for the Surjit Finance Landing Page — PHASE 1 (HTTP bootstrap).
+#
+# Installed as /etc/nginx/sites-available/surjit-landing.conf by
+# deploy/scripts/nginx-install.sh BEFORE a certificate exists, so that
+# `nginx -t` passes and Let's Encrypt can reach the HTTP-01 challenge
+# directory. It is replaced by the HTTPS template (phase 2) once
+# `certbot certonly --webroot` has issued the `surjit-landing` certificate.
+#
+# Serves nothing but the challenge files: the site itself is only ever served
+# over HTTPS. No default_server, no TLS, no http-level declarations — this file
+# cannot affect any other site on the same nginx.
+#
+# Replace before use (the install script does this):
+#   LANDING_DOMAIN   the confirmed landing domain (NOT yet confirmed)
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name LANDING_DOMAIN;
+
+    server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/surjit-landing/acme;
+    }
+
+    location / {
+        return 404;
+    }
+
+    access_log /var/log/nginx/surjit-landing.access.log;
+    error_log /var/log/nginx/surjit-landing.error.log warn;
+}

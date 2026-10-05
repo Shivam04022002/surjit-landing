@@ -1,0 +1,33 @@
+{
+  "name": "surjit-landing-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API for the Surjit Finance Business Loan landing page: lead enquiries, PIN-code lookup and first-party analytics.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "dev:memory": "node scripts/devWithMemoryDb.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "check": "node --check server.js && node --check app.js && node --check scripts/devWithMemoryDb.js"
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "version": "8.2.6"
+    }
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "mongoose": "^8.24.4"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.4.3"
+  }
+}

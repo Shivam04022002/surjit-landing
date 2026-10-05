@@ -1,0 +1,74 @@
+.site-footer {
+  background: var(--color-text);
+  color: #E2E8F0;
+  padding: 3rem 0 1.5rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* The logo artwork is dark; it sits on a white plate to stay legible. */
+.footer-brand .logo {
+  height: 32px;
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  box-sizing: content-box;
+}
+
+.footer-brand p {
+  margin: 0.75rem 0 0;
+  color: #CBD5E1;
+}
+
+.footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+
+.footer-links a {
+  color: #F1F5F9;
+  text-decoration: none;
+  padding: 0.25rem 0;
+  display: inline-block;
+}
+
+.footer-links a:hover {
+  color: #FDBA74;
+  text-decoration: underline;
+}
+
+.site-footer :focus-visible {
+  outline-color: #FDBA74;
+}
+
+.footer-bottom {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.18);
+  font-size: 0.875rem;
+  color: #CBD5E1;
+}
+
+.footer-bottom p {
+  margin: 0 0 0.5rem;
+}
+
+.footer-note {
+  max-width: 720px;
+}
+
+@media (min-width: 768px) {
+  .footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}

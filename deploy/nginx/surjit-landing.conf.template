@@ -1,0 +1,127 @@
+# Nginx site for the Surjit Finance Landing Page — PHASE 2 (HTTPS).
+#
+# Installed ONLY as /etc/nginx/sites-available/surjit-landing.conf (symlinked
+# into sites-enabled) by deploy/scripts/nginx-install.sh, after the
+# certificate exists. It never replaces or edits any other site file.
+#
+# Replace before use (the install script does this):
+#   LANDING_DOMAIN   the confirmed landing domain, e.g. enquiry.example.com
+#                    (NOT yet confirmed)
+#
+# Isolation from any other site on the same nginx (e.g. SurjitWeb):
+#   · server_name is the landing domain only; no `default_server`, so this
+#     file never answers requests for another site's domain;
+#   · the two http-level names below are prefixed surjit_landing_ so they
+#     cannot collide with another site's zones or log formats;
+#   · the certificate is certbot lineage `surjit-landing`
+#     (/etc/letsencrypt/live/surjit-landing/), separate from every other
+#     site's certificates;
+#   · /api/ proxies only to the landing API on 127.0.0.1:5050.
+#
+# Note on `listen 443 ssl http2`: in nginx 1.24, listen options apply to the
+# whole address:port, i.e. to every site on 443. If another site already
+# serves 443 WITHOUT http2, adding this file would enable HTTP/2 for that site
+# too. nginx-install.sh checks for this and stops for a decision; on a server
+# where this is the only 443 site (the fresh staging server), it does not
+# arise.
+
+# ── http-level declarations ──────────────────────────────────────────────────
+# Files in sites-enabled/ are included inside nginx's `http {}` block, so these
+# two directives sit at http level, outside any `server {}`.
+
+# Per-IP request ceilings in front of the API's own rate limits.
+limit_req_zone $binary_remote_addr zone=surjit_landing_api:10m rate=10r/s;
+
+# Access log without query strings (no campaign tags or ids in logs).
+log_format surjit_landing '$remote_addr [$time_local] "$request_method $uri" $status $body_bytes_sent $request_time';
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name LANDING_DOMAIN;
+
+    # Let's Encrypt HTTP-01 challenges (renewals), then everything else to HTTPS.
+    location /.well-known/acme-challenge/ {
+        root /var/www/surjit-landing/acme;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+
+    access_log /var/log/nginx/surjit-landing.access.log surjit_landing;
+    error_log /var/log/nginx/surjit-landing.error.log warn;
+}
+
+server {
+    # `http2` as a listen parameter: the form Ubuntu 24.04's packaged nginx
+    # (1.24.0) supports. The standalone `http2 on;` directive needs 1.25.1+.
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name LANDING_DOMAIN;
+
+    # Certbot lineage `surjit-landing` (certbot certonly --webroot --cert-name
+    # surjit-landing). Certbot never edits this file.
+    ssl_certificate /etc/letsencrypt/live/surjit-landing/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/surjit-landing/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    root /var/www/surjit-landing/current/frontend/dist;
+    index index.html;
+
+    server_tokens off;
+    client_max_body_size 16k;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    # The built site loads only its own scripts, styles and images, and calls
+    # only its own /api.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # API (including /api/health): proxied ONLY to the landing API on
+    # loopback. Port 5050 is never exposed publicly (security group: 80/443 only).
+    location /api/ {
+        limit_req zone=surjit_landing_api burst=20 nodelay;
+        proxy_pass http://127.0.0.1:5050;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # Overwrite, not append: the API trusts exactly one proxy hop.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+
+    # Fingerprinted build assets never change; cache them for a year.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # index.html must always be revalidated so a deploy is picked up.
+    location = /index.html {
+        add_header Cache-Control "no-cache" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Format declared at the top of this file.
+    access_log /var/log/nginx/surjit-landing.access.log surjit_landing;
+    error_log /var/log/nginx/surjit-landing.error.log warn;
+}
