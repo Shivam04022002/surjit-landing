@@ -15,7 +15,9 @@ const { spawnSync } = require('node:child_process');
 const ROOT = path.join(__dirname, '..', '..');
 const SCRIPTS = path.join(ROOT, 'deploy', 'scripts');
 const NGINX = path.join(ROOT, 'deploy', 'nginx');
-const read = (p) => fs.readFileSync(p, 'utf8');
+// Line endings normalised: a Windows checkout has CRLF in text files
+// (.gitattributes `text=auto`), and every check here works line by line.
+const read = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 
 const scriptFiles = fs.readdirSync(SCRIPTS).filter((f) => f.endsWith('.sh')).map((f) => path.join(SCRIPTS, f));
 const nginxFiles = fs.readdirSync(NGINX).map((f) => path.join(NGINX, f));
